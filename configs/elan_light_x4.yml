@@ -1,4 +1,4 @@
-model: 'elan'
+model: "elan"
 ## parameters for plain
 scale: 4
 rgb_range: 255
@@ -7,7 +7,7 @@ m_elan: 24
 c_elan: 60
 n_share: 1
 r_expand: 2
-act_type: 'relu'
+act_type: "relu"
 window_sizes: [4, 8, 16]
 pretrain:
 
@@ -17,9 +17,13 @@ batch_size: 64
 data_repeat: 80
 data_augment: 1
 
+# Epochs 是一个整数，表示训练的总epoch数
 epochs: 1000
+# Lr 是一个浮点数，表示初始学习率
 lr: 0.0002
+# Deacys 是一个列表，每个元素是一个epoch，每个epoch都会对lr进行一次衰减
 decays: [250, 400, 450, 475, 500]
+# Gamma 是一个浮点数，表示衰减率
 gamma: 0.5
 log_every: 100
 test_every: 1
@@ -31,5 +35,5 @@ gpu_ids: [4, 5, 6, 7]
 threads: 8
 
 ## data specification
-data_path: '/home/xindongzhang/SR_datasets'
-eval_sets: ['Set5', 'Set14', 'B100', 'Urban100', 'Manga109']
+data_path: "/home/xindongzhang/SR_datasets"
+eval_sets: ["Set5", "Set14", "B100", "Urban100", "Manga109"]
