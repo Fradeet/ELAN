@@ -8,8 +8,10 @@ from torch.nn.utils import weight_norm
 from timm.models.layers import DropPath, to_2tuple, trunc_normal_
 from models.elan_block import ELAB, MeanShift
 
+
 def create_model(args):
     return ELAN(args)
+
 
 class ELAN(nn.Module):
     def __init__(self, args):
@@ -18,36 +20,48 @@ class ELAN(nn.Module):
         self.scale = args.scale
         self.colors = args.colors
         self.window_sizes = args.window_sizes
-        self.m_elan  = args.m_elan
-        self.c_elan  = args.c_elan
+        self.m_elan = args.m_elan
+        self.c_elan = args.c_elan
         self.n_share = args.n_share
         self.r_expand = args.r_expand
         self.sub_mean = MeanShift(args.rgb_range)
         self.add_mean = MeanShift(args.rgb_range, sign=1)
 
         # define head module
-        m_head = [nn.Conv2d(self.colors, self.c_elan, kernel_size=3, stride=1, padding=1)]
+        m_head = [
+            nn.Conv2d(self.colors,
+                      self.c_elan,
+                      kernel_size=3,
+                      stride=1,
+                      padding=1)
+        ]
 
         # define body module
         m_body = []
-        for i in range(self.m_elan // (1+self.n_share)):
-            if (i+1) % 2 == 1: 
+        for i in range(self.m_elan // (1 + self.n_share)):
+            if (i + 1) % 2 == 1:
                 m_body.append(
-                    ELAB(
-                        self.c_elan, self.c_elan, self.r_expand, 0, 
-                        self.window_sizes, shared_depth=self.n_share
-                    )
-                )
-            else:              
+                    ELAB(self.c_elan,
+                         self.c_elan,
+                         self.r_expand,
+                         0,
+                         self.window_sizes,
+                         shared_depth=self.n_share))
+            else:
                 m_body.append(
-                    ELAB(
-                        self.c_elan, self.c_elan, self.r_expand, 1, 
-                        self.window_sizes, shared_depth=self.n_share
-                    )
-                )
+                    ELAB(self.c_elan,
+                         self.c_elan,
+                         self.r_expand,
+                         1,
+                         self.window_sizes,
+                         shared_depth=self.n_share))
         # define tail module
         m_tail = [
-            nn.Conv2d(self.c_elan, self.colors*self.scale*self.scale, kernel_size=3, stride=1, padding=1),
+            nn.Conv2d(self.c_elan,
+                      self.colors * self.scale * self.scale,
+                      kernel_size=3,
+                      stride=1,
+                      padding=1),
             nn.PixelShuffle(self.scale)
         ]
 
@@ -58,7 +72,7 @@ class ELAN(nn.Module):
     def forward(self, x):
         H, W = x.shape[2:]
         x = self.check_image_size(x)
-        
+
         x = self.sub_mean(x)
         x = self.head(x)
         res = self.body(x)
@@ -66,13 +80,14 @@ class ELAN(nn.Module):
         x = self.tail(res)
         x = self.add_mean(x)
 
-        return x[:, :, 0:H*self.scale, 0:W*self.scale]
+        return x[:, :, 0:H * self.scale, 0:W * self.scale]
 
     def check_image_size(self, x):
         _, _, h, w = x.size()
         wsize = self.window_sizes[0]
         for i in range(1, len(self.window_sizes)):
-            wsize = wsize*self.window_sizes[i] // math.gcd(wsize, self.window_sizes[i])
+            wsize = wsize * self.window_sizes[i] // math.gcd(
+                wsize, self.window_sizes[i])
         mod_pad_h = (wsize - h % wsize) % wsize
         mod_pad_w = (wsize - w % wsize) % wsize
         x = F.pad(x, (0, mod_pad_w, 0, mod_pad_h), 'reflect')
@@ -88,14 +103,15 @@ class ELAN(nn.Module):
                     own_state[name].copy_(param)
                 except Exception:
                     if name.find('tail') == -1:
-                        raise RuntimeError('While copying the parameter named {}, '
-                                           'whose dimensions in the model are {} and '
-                                           'whose dimensions in the checkpoint are {}.'
-                                           .format(name, own_state[name].size(), param.size()))
+                        raise RuntimeError(
+                            'While copying the parameter named {}, '
+                            'whose dimensions in the model are {} and '
+                            'whose dimensions in the checkpoint are {}.'.
+                            format(name, own_state[name].size(), param.size()))
             elif strict:
                 if name.find('tail') == -1:
-                    raise KeyError('unexpected key "{}" in state_dict'
-                                   .format(name))
+                    raise KeyError(
+                        'unexpected key "{}" in state_dict'.format(name))
 
 
 if __name__ == '__main__':

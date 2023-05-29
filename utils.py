@@ -24,12 +24,15 @@ def rgb_to_ycbcr(image: torch.Tensor) -> torch.Tensor:
     """
 
     if not torch.is_tensor(image):
-        raise TypeError("Input type is not a torch.Tensor. Got {}".format(type(image)))
+        raise TypeError("Input type is not a torch.Tensor. Got {}".format(
+            type(image)))
 
     if len(image.shape) < 3 or image.shape[-3] != 3:
-        raise ValueError("Input size must have a shape of (*, 3, H, W). Got {}".format(image.shape))
+        raise ValueError(
+            "Input size must have a shape of (*, 3, H, W). Got {}".format(
+                image.shape))
 
-    image = image / 255. ## image in range (0, 1)
+    image = image / 255.  ## image in range (0, 1)
     r: torch.Tensor = image[..., 0, :, :]
     g: torch.Tensor = image[..., 1, :, :]
     b: torch.Tensor = image[..., 2, :, :]
@@ -40,6 +43,7 @@ def rgb_to_ycbcr(image: torch.Tensor) -> torch.Tensor:
 
     return torch.stack((y, cb, cr), -3)
 
+
 def prepare_qat(model):
     ## fuse model
     model.module.fuse_model()
@@ -48,41 +52,46 @@ def prepare_qat(model):
     # model.qconfig = torch.quantization.get_default_qat_qconfig('qnnpack')
     # model.qconfig = torch.quantization.QConfig(
     #     activation=torch.quantization.FakeQuantize.with_args(
-    #         observer=torch.quantization.MinMaxObserver, 
+    #         observer=torch.quantization.MinMaxObserver,
     #         quant_min=-128,
     #         quant_max=127,
     #         qscheme=torch.per_tensor_symmetric,
     #         dtype=torch.qint8,
     #         reduce_range=False),
     #     weight=torch.quantization.FakeQuantize.with_args(
-    #         observer=torch.quantization.MinMaxObserver, 
-    #         quant_min=-128, 
-    #         quant_max=+127, 
-    #         dtype=torch.qint8, 
-    #         qscheme=torch.per_tensor_symmetric, 
+    #         observer=torch.quantization.MinMaxObserver,
+    #         quant_min=-128,
+    #         quant_max=+127,
+    #         dtype=torch.qint8,
+    #         qscheme=torch.per_tensor_symmetric,
     #         reduce_range=False)
     # )
     model = torch.quantization.prepare_qat(model, inplace=True)
     return model
 
+
 def import_module(name):
     return importlib.import_module(name)
+
 
 def calc_psnr(sr, hr):
     sr, hr = sr.double(), hr.double()
     diff = (sr - hr) / 255.00
-    mse  = diff.pow(2).mean()
-    psnr = -10 * math.log10(mse)                    
+    mse = diff.pow(2).mean()
+    psnr = -10 * math.log10(mse)
     return float(psnr)
+
 
 def calc_ssim(sr, hr):
     ssim_val = ssim(sr, hr, size_average=True)
     return float(ssim_val)
-    
+
+
 def ndarray2tensor(ndarray_hwc):
     ndarray_chw = np.ascontiguousarray(ndarray_hwc.transpose((2, 0, 1)))
     tensor = torch.from_numpy(ndarray_chw).float()
     return tensor
+
 
 def cur_timestamp_str():
     now = datetime.datetime.now()
@@ -98,14 +107,17 @@ def cur_timestamp_str():
 
 class ExperimentLogger(object):
     def __init__(self, filename='default.log', stream=sys.stdout):
-	    self.terminal = stream
-	    self.log = open(filename, 'a')
+        self.terminal = stream
+        self.log = open(filename, 'a')
+
     def write(self, message):
-	    self.terminal.write(message)
-	    self.log.write(message)
+        self.terminal.write(message)
+        self.log.write(message)
+
     def flush(self):
         self.terminal.flush()
         self.log.flush()
+
 
 def get_stat_dict():
     stat_dict = {
@@ -174,6 +186,7 @@ def get_stat_dict():
         }
     }
     return stat_dict
+
 
 if __name__ == '__main__':
     timestamp = cur_timestamp_str()
