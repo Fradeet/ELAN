@@ -135,8 +135,12 @@ if __name__ == '__main__':
               format('fp32', epoch, opt_lr))
         for iter, batch in enumerate(train_dataloader):
             optimizer.zero_grad()
+
+            # lr: low resolution; hr: high resolution; sr: super resolution
             lr, hr = batch
             lr, hr = lr.to(device), hr.to(device)
+
+            # 使用网络进行前向传播，得高分辨率图片；计算损失函数并反向传播；
             sr = model(lr)
             loss = loss_func(sr, hr)
             loss.backward()
@@ -161,6 +165,7 @@ if __name__ == '__main__':
                 print('Epoch:{}, {}/{}, loss: {:.4f}, time: {:.3f}'.format(
                     cur_epoch, cur_steps, total_steps, avg_loss, duration))
 
+        # 验证模型
         if epoch % args.test_every == 0:
             torch.set_grad_enabled(False)
             test_log = ''
@@ -179,6 +184,7 @@ if __name__ == '__main__':
                     if args.colors == 3:
                         hr_ycbcr = utils.rgb_to_ycbcr(hr)
                         sr_ycbcr = utils.rgb_to_ycbcr(sr)
+                        # 1 通道
                         hr = hr_ycbcr[:, 0:1, :, :]
                         sr = sr_ycbcr[:, 0:1, :, :]
                     # crop image for evaluation

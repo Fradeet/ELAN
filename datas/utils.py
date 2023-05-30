@@ -18,6 +18,7 @@ def create_datasets(args):
     )
     train_dataloader = DataLoader(dataset=div2k, num_workers=args.threads, batch_size=args.batch_size, shuffle=True, pin_memory=True, drop_last=True)
     
+    # 构造字典，传入训练流程
     valid_dataloaders = []
     if 'Set5' in args.eval_sets:
         set5_hr_path = os.path.join(args.data_path, 'benchmark/Set5/HR')
